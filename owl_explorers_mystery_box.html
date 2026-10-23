@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🦉 Owl Explorers: The Mystery Box</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-night: #0e1329;
+            --accent-purple: #3a1c71;
+            --accent-gold: #fbbf24;
+            --accent-owl: #38bdf8;
+            --accent-box: #f97316;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: radial-gradient(circle at top center, #1e1b4b 0%, #0f172a 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+            user-select: none;
+        }
+
+        h1, h2, h3, .font-heading {
+            font-family: 'Fredoka', cursive;
+        }
+
+        /* Glassmorphism containers */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .glass-card-glow {
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
+        }
+
+        /* Card Flip Animations */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+            transition: transform 0.5s ease-in-out;
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+
+        /* Glowing text & pulse animations */
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(251, 191, 36, 0.4); }
+            50% { box-shadow: 0 0 30px rgba(251, 191, 36, 0.8); }
+        }
+
+        .glow-box {
+            animation: pulseGlow 2.5s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        /* Confetti effect particles */
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            animation: fall 3s linear forwards;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Room interactive item outline */
+        .room-item {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .room-item:hover {
+            filter: drop-shadow(0 0 12px #fbbf24);
+            transform: scale(1.03);
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-slate-100 pb-10 overflow-x-hidden">
+
+    <!-- Top Navigation & Global Controls -->
+    <header class="w-full bg-slate-900/80 border-b border-slate-800 sticky top-0 z-50 backdrop-blur-md px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="app.showScreen('main')">
+                <div class="text-3xl floating">🦉</div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold text-amber-400 tracking-wide leading-tight">OWL EXPLORERS</h1>
+                    <p class="text-xs text-sky-300 font-semibold uppercase tracking-wider">The Mystery Box Challenge</p>
+                </div>
+            </div>
+
+            <!-- Global Action Controls -->
+            <div class="flex items-center gap-2">
+                <button id="soundToggleBtn" onclick="app.toggleSound()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 text-sm font-bold flex items-center gap-2 transition">
+                    <span id="soundIcon">🔊</span> <span class="hidden sm:inline">Sound</span>
+                </button>
+                <button onclick="app.openTeacherModal()" class="px-3 py-2 bg-purple-900/60 hover:bg-purple-800 border border-purple-500/40 rounded-xl text-sm font-bold text-purple-200 flex items-center gap-2 transition">
+                    🧑‍🏫 <span class="hidden sm:inline">Teacher Panel</span>
+                </button>
+                <button onclick="app.openTeamsModal()" class="px-3 py-2 bg-sky-900/60 hover:bg-sky-800 border border-sky-500/40 rounded-xl text-sm font-bold text-sky-200 flex items-center gap-2 transition">
+                    👥 <span class="hidden sm:inline">Teams</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard Bar: Team Scores & Secret Combination -->
+    <section class="max-w-7xl mx-auto w-full px-4 mt-4">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+            
+            <!-- Team Owl Card -->
+            <div id="owlScoreCard" class="md:col-span-4 glass-card p-4 rounded-2xl border-l-4 border-l-sky-400 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="text-4xl bg-sky-950/60 p-2 rounded-2xl border border-sky-800">🦉</div>
+                    <div>
+                        <h3 class="text-lg font-bold text-sky-400">TEAM OWL</h3>
+                        <p class="text-xs text-slate-400" id="teamOwlMembersCount">0 Explorers</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs text-slate-400 block font-bold">TOTAL XP</span>
+                    <span id="owlXpDisplay" class="text-2xl font-black text-amber-400">0</span>
+                </div>
+            </div>
+
+            <!-- Secret Combination Display -->
+            <div class="md:col-span-4 glass-card p-4 rounded-2xl border border-amber-500/30 text-center flex flex-col items-center justify-center glow-box bg-gradient-to-b from-slate-900/90 to-purple-950/80">
+                <span class="text-xs text-amber-300 font-bold uppercase tracking-widest mb-1">🔐 Secret Combination</span>
+                <div class="flex items-center justify-center gap-3 my-1">
+                    <div id="digit1Display" class="w-12 h-14 bg-slate-950 border-2 border-amber-500/50 rounded-xl flex items-center justify-center text-2xl font-black text-amber-400 shadow-inner">?</div>
+                    <div id="digit2Display" class="w-12 h-14 bg-slate-950 border-2 border-amber-500/50 rounded-xl flex items-center justify-center text-2xl font-black text-amber-400 shadow-inner">?</div>
+                    <div id="digit3Display" class="w-12 h-14 bg-slate-950 border-2 border-amber-500/50 rounded-xl flex items-center justify-center text-2xl font-black text-amber-400 shadow-inner">?</div>
+                </div>
+                <p class="text-[11px] text-slate-400">Complete challenges to discover all 3 digits!</p>
+            </div>
+
+            <!-- Team Box Card -->
+            <div id="boxScoreCard" class="md:col-span-4 glass-card p-4 rounded-2xl border-l-4 border-l-orange-400 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="text-4xl bg-orange-950/60 p-2 rounded-2xl border border-orange-800">📦</div>
+                    <div>
+                        <h3 class="text-lg font-bold text-orange-400">TEAM BOX</h3>
+                        <p class="text-xs text-slate-400" id="teamBoxMembersCount">0 Explorers</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs text-slate-400 block font-bold">TOTAL XP</span>
+                    <span id="boxXpDisplay" class="text-2xl font-black text-amber-400">0</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Adventure Progress Tracker -->
+        <div class="mt-4 glass-card p-3 rounded-2xl">
+            <div class="flex items-center justify-between text-xs font-bold mb-2 px-2 text-slate-300">
+                <span>PROGRESS</span>
+                <span id="progressText">Challenge 1 of 3</span>
+            </div>
+            <div class="grid grid-cols-4 gap-2 text-center text-xs font-bold">
+                <button onclick="app.showScreen('challenge1')" id="navC1" class="py-2 rounded-xl transition bg-sky-600 text-white flex items-center justify-center gap-1">
+                    🧠 <span class="hidden sm:inline">Challenge 1</span>
+                </button>
+                <button onclick="app.showScreen('challenge2')" id="navC2" class="py-2 rounded-xl transition bg-slate-800 text-slate-400 flex items-center justify-center gap-1 opacity-50 cursor-not-allowed">
+                    ⚡ <span class="hidden sm:inline">Challenge 2</span>
+                </button>
+                <button onclick="app.showScreen('challenge3')" id="navC3" class="py-2 rounded-xl transition bg-slate-800 text-slate-400 flex items-center justify-center gap-1 opacity-50 cursor-not-allowed">
+                    🔎 <span class="hidden sm:inline">Challenge 3</span>
+                </button>
+                <button onclick="app.showScreen('lock')" id="navLock" class="py-2 rounded-xl transition bg-slate-800 text-slate-400 flex items-center justify-center gap-1 opacity-50 cursor-not-allowed">
+                    🎉 <span class="hidden sm:inline">Mystery Box</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Badges Earned Ribbon -->
+        <div class="mt-3 flex items-center gap-2 overflow-x-auto py-1 px-1 text-xs">
+            <span class="font-bold text-slate-400 text-nowrap mr-1">🏅 Earned Badges:</span>
+            <div id="badgesContainer" class="flex items-center gap-2">
+                <span class="text-slate-500 italic text-xs">Complete challenges to earn badges!</span>
+            </div>
+        </div>
+    </section>
+
+    <main class="max-w-7xl mx-auto w-full px-4 mt-6 flex-1">
+
+        <!-- ========================================== -->
+        <!-- SCREEN 0: TEAM SETUP & WELCOME -->
+        <!-- ========================================== -->
+        <div id="screenSetup" class="glass-card p-6 rounded-3xl max-w-3xl mx-auto text-center border border-sky-500/20">
+            <div class="text-6xl mb-3 floating">🦉📦</div>
+            <h2 class="text-3xl font-bold text-amber-400 mb-2">Welcome, Owl Explorers!</h2>
+            <p class="text-slate-300 max-w-lg mx-auto mb-6 text-sm">
+                Oliver the Owl has locked his mysterious treasure box, and the secret combination is hidden behind 3 preposition challenges! Set up your teams to start the mission.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left mb-6">
+                <!-- Team Owl Roster -->
+                <div class="bg-slate-900/90 p-4 rounded-2xl border border-sky-500/30">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-lg font-bold text-sky-400 flex items-center gap-2">🦉 Team Owl</h3>
+                        <span id="owlCountBadge" class="bg-sky-900 text-sky-200 px-2 py-0.5 rounded-full text-xs font-bold">0</span>
+                    </div>
+                    <div id="owlMemberList" class="min-h-[100px] max-h-[150px] overflow-y-auto space-y-1 mb-3 pr-1 text-sm">
+                        <!-- Members rendered here -->
+                    </div>
+                    <div class="flex gap-2">
+                        <input id="owlNameInput" type="text" placeholder="Explorer name..." class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-sky-400">
+                        <button onclick="app.addStudent('owl')" class="bg-sky-600 hover:bg-sky-500 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition">Add</button>
+                    </div>
+                </div>
+
+                <!-- Team Box Roster -->
+                <div class="bg-slate-900/90 p-4 rounded-2xl border border-orange-500/30">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-lg font-bold text-orange-400 flex items-center gap-2">📦 Team Box</h3>
+                        <span id="boxCountBadge" class="bg-orange-900 text-orange-200 px-2 py-0.5 rounded-full text-xs font-bold">0</span>
+                    </div>
+                    <div id="boxMemberList" class="min-h-[100px] max-h-[150px] overflow-y-auto space-y-1 mb-3 pr-1 text-sm">
+                        <!-- Members rendered here -->
+                    </div>
+                    <div class="flex gap-2">
+                        <input id="boxNameInput" type="text" placeholder="Explorer name..." class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-orange-400">
+                        <button onclick="app.addStudent('box')" class="bg-orange-600 hover:bg-orange-500 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition">Add</button>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="app.startGame()" class="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-lg rounded-2xl shadow-lg transition transform hover:scale-105 active:scale-95">
+                🚀 START ADVENTURE
+            </button>
+        </div>
+
+
+        <!-- ========================================== -->
+        <!-- SCREEN 1: CHALLENGE 1 - THE OWL MEMORY HUNT -->
+        <!-- ========================================== -->
+        <div id="screenChallenge1" class="hidden space-y-4">
+            <div class="glass-card p-5 rounded-3xl border border-sky-500/30 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                    <span class="bg-sky-900/80 text-sky-300 font-bold px-3 py-1 rounded-full text-xs tracking-wider">🧠 CHALLENGE 1</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-amber-400 mt-1">THE OWL MEMORY HUNT</h2>
+                    <p class="text-xs md:text-sm text-slate-300 mt-1">
+                        Find the matching pairs! Each pair reveals where an object is located. Correct match = <strong>+10 XP</strong>!
+                    </p>
+                </div>
+                <!-- Team Turn Selector -->
+                <div class="bg-slate-900/90 p-3 rounded-2xl border border-slate-700 flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-400">Current Turn:</span>
+                    <button id="turnOwlBtn" onclick="app.setActiveTeam('owl')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-600 text-white transition">🦉 Owl</button>
+                    <button id="turnBoxBtn" onclick="app.setActiveTeam('box')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-400 transition">📦 Box</button>
+                </div>
+            </div>
+
+            <!-- Feedback Message Banner -->
+            <div id="c1Feedback" class="hidden p-3 rounded-2xl text-center text-sm font-bold animate-bounce"></div>
+
+            <!-- Memory Card Grid -->
+            <div id="memoryGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <!-- Memory cards dynamically rendered -->
+            </div>
+
+            <!-- Challenge 1 Completion Banner -->
+            <div id="c1CompleteBanner" class="hidden glass-card p-6 rounded-3xl border-2 border-emerald-500/50 bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-center">
+                <div class="text-4xl mb-2">🔓</div>
+                <h3 class="text-2xl font-bold text-emerald-400">FIRST CLUE UNLOCKED!</h3>
+                <p class="text-lg text-slate-200 my-2">Your first secret combination digit is: <span id="c1UnlockedDigit" class="text-3xl font-black text-amber-400 bg-slate-950 px-3 py-1 rounded-xl border border-amber-500/50 inline-block shadow-md">7</span></p>
+                <p class="text-xs text-slate-400 mb-4">Badge Earned: 🧠 <strong>Memory Master</strong></p>
+                <button onclick="app.showScreen('challenge2')" class="px-6 py-3 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-extrabold rounded-2xl transition shadow-lg transform hover:scale-105">
+                    ➡️ CONTINUE TO CHALLENGE 2
+                </button>
+            </div>
+        </div>
+
+
+        <!-- ========================================== -->
+        <!-- SCREEN 2: CHALLENGE 2 - PREPOSITION TRIVIA BATTLE -->
+        <!-- ========================================== -->
+        <div id="screenChallenge2" class="hidden space-y-4">
+            <div class="glass-card p-5 rounded-3xl border border-purple-500/30 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                    <span class="bg-purple-900/80 text-purple-300 font-bold px-3 py-1 rounded-full text-xs tracking-wider">⚡ CHALLENGE 2</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-amber-400 mt-1">PREPOSITION TRIVIA BATTLE</h2>
+                    <p class="text-xs md:text-sm text-slate-300 mt-1">
+                        Look at the scene and answer the question. Select which team is answering to award <strong>+10 XP</strong>!
+                    </p>
+                </div>
+                <div class="text-xs font-bold bg-slate-900/80 px-3 py-2 rounded-xl border border-slate-700 text-amber-300">
+                    Question <span id="c2QIndex">1</span> of <span id="c2QTotal">10</span>
+                </div>
+            </div>
+
+            <!-- Trivia Card Container -->
+            <div id="triviaContainer" class="glass-card p-6 rounded-3xl border border-slate-700">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                    
+                    <!-- Visual Scene Display -->
+                    <div id="triviaVisualBox" class="bg-slate-950 rounded-2xl p-6 min-h-[220px] flex flex-col items-center justify-center border border-slate-800 shadow-inner relative overflow-hidden">
+                        <!-- Rendered visual scene SVG/Elements -->
+                    </div>
+
+                    <!-- Question & Team Answer Buttons -->
+                    <div class="space-y-4">
+                        <h3 id="triviaQuestionText" class="text-xl font-bold text-slate-100">Where is the object?</h3>
+                        
+                        <div id="triviaOptionsGrid" class="grid grid-cols-1 gap-2">
+                            <!-- Options rendered dynamically -->
+                        </div>
+
+                        <!-- Teacher Team Answer Selector -->
+                        <div class="pt-2 border-t border-slate-800 flex flex-wrap gap-2 items-center justify-between">
+                            <span class="text-xs font-bold text-slate-400">Award Answer To:</span>
+                            <div class="flex gap-2">
+                                <button id="triviaOwlAnsBtn" onclick="app.submitTriviaAnswer('owl')" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl transition flex items-center gap-1 shadow">
+                                    🦉 TEAM OWL ANSWERS
+                                </button>
+                                <button id="triviaBoxAnsBtn" onclick="app.submitTriviaAnswer('box')" class="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs rounded-xl transition flex items-center gap-1 shadow">
+                                    📦 TEAM BOX ANSWERS
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Feedback Modal Banner -->
+            <div id="c2FeedbackBanner" class="hidden p-4 rounded-2xl text-center font-bold text-lg animate-pulse"></div>
+
+            <!-- Challenge 2 Completion Banner -->
+            <div id="c2CompleteBanner" class="hidden glass-card p-6 rounded-3xl border-2 border-purple-500/50 bg-gradient-to-r from-slate-900 via-purple-950 to-slate-900 text-center">
+                <div class="text-4xl mb-2">🔐</div>
+                <h3 class="text-2xl font-bold text-purple-300">SECOND CLUE UNLOCKED!</h3>
+                <p class="text-lg text-slate-200 my-2">Your second secret combination digit is: <span id="c2UnlockedDigit" class="text-3xl font-black text-amber-400 bg-slate-950 px-3 py-1 rounded-xl border border-amber-500/50 inline-block shadow-md">4</span></p>
+                <p class="text-xs text-slate-400 mb-4">Badge Earned: ⚡ <strong>Preposition Expert</strong></p>
+                <button onclick="app.showScreen('challenge3')" class="px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white font-extrabold rounded-2xl transition shadow-lg transform hover:scale-105">
+                    ➡️ UNLOCK CHALLENGE 3
+                </button>
+            </div>
+        </div>
+
+
+        <!-- ========================================== -->
+        <!-- SCREEN 3: CHALLENGE 3 - OLIVER'S SECRET ROOM -->
+        <!-- ========================================== -->
+        <div id="screenChallenge3" class="hidden space-y-4">
+            <div class="glass-card p-5 rounded-3xl border border-amber-500/30 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                    <span class="bg-amber-900/80 text-amber-300 font-bold px-3 py-1 rounded-full text-xs tracking-wider">🔎 CHALLENGE 3</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-amber-400 mt-1">OLIVER'S SECRET ROOM</h2>
+                    <p class="text-xs md:text-sm text-slate-300 mt-1">
+                        Read Oliver's clue and click the correct hidden object in the room! Correct item = <strong>+15 XP</strong>!
+                    </p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-400">Current Turn:</span>
+                    <button id="turnOwlBtnC3" onclick="app.setActiveTeam('owl')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-600 text-white transition">🦉 Owl</button>
+                    <button id="turnBoxBtnC3" onclick="app.setActiveTeam('box')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-400 transition">📦 Box</button>
+                </div>
+            </div>
+
+            <!-- Clue Card Banner -->
+            <div class="glass-card p-4 rounded-2xl border-2 border-amber-400/40 bg-gradient-to-r from-amber-950/40 via-slate-900 to-amber-950/40 flex items-center gap-4">
+                <div class="text-4xl floating">🦉</div>
+                <div class="flex-1">
+                    <span class="text-xs font-bold text-amber-400 uppercase tracking-widest block">Oliver's Clue (<span id="c3ClueIndex">1</span>/<span id="c3ClueTotal">8</span>)</span>
+                    <h3 id="c3ClueText" class="text-lg md:text-xl font-black text-white mt-0.5">"Find the object..."</h3>
+                </div>
+            </div>
+
+            <!-- Feedback Message Banner -->
+            <div id="c3Feedback" class="hidden p-3 rounded-2xl text-center text-sm font-bold"></div>
+
+            <!-- Interactive Room Visual Canvas / SVG Container -->
+            <div class="glass-card p-4 rounded-3xl border border-slate-700 bg-slate-950 overflow-hidden relative">
+                <div class="text-xs text-slate-400 text-center mb-2 font-bold">👇 Click the object in the secret room:</div>
+                <div id="roomContainer" class="w-full max-w-4xl mx-auto h-[380px] sm:h-[450px] bg-slate-900 rounded-2xl border border-slate-800 relative overflow-hidden shadow-2xl">
+                    <!-- Interactive room elements built with custom SVG/CSS visuals -->
+                </div>
+            </div>
+
+            <!-- Challenge 3 Completion Banner -->
+            <div id="c3CompleteBanner" class="hidden glass-card p-6 rounded-3xl border-2 border-amber-500/50 bg-gradient-to-r from-slate-900 via-amber-950 to-slate-900 text-center">
+                <div class="text-4xl mb-2">🔓</div>
+                <h3 class="text-2xl font-bold text-amber-400">FINAL DIGIT DISCOVERED!</h3>
+                <p class="text-lg text-slate-200 my-2">Your third secret combination digit is: <span id="c3UnlockedDigit" class="text-3xl font-black text-amber-400 bg-slate-950 px-3 py-1 rounded-xl border border-amber-500/50 inline-block shadow-md">8</span></p>
+                <p class="text-xs text-slate-400 mb-4">Badge Earned: 🔎 <strong>Secret Room Explorer</strong></p>
+                <button onclick="app.showScreen('lock')" class="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black rounded-2xl transition shadow-lg transform hover:scale-105">
+                    🎉 PROCEED TO MYSTERY BOX
+                </button>
+            </div>
+        </div>
+
+
+        <!-- ========================================== -->
+        <!-- SCREEN 4: DIGITAL COMBINATION LOCK -->
+        <!-- ========================================== -->
+        <div id="screenLock" class="hidden space-y-6 max-w-2xl mx-auto">
+            <div class="glass-card p-8 rounded-3xl border border-amber-500/40 text-center glow-box">
+                <div class="text-6xl mb-3 floating">📦🔐</div>
+                <h2 class="text-3xl font-bold text-amber-400">THE MYSTERY BOX LOCK</h2>
+                <p class="text-slate-300 text-sm mt-2 max-w-md mx-auto">
+                    You have unlocked all clues! Enter the 3 secret digits discovered during your adventure to open Oliver's Mystery Box.
+                </p>
+
+                <!-- Digital Lock Input Dials -->
+                <div class="flex justify-center items-center gap-4 my-8">
+                    <!-- Digit Dial 1 -->
+                    <div class="flex flex-col items-center">
+                        <button onclick="app.changeLockDial(0, 1)" class="w-12 h-10 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold rounded-t-xl border border-slate-600 text-lg">▲</button>
+                        <div id="dial0" class="w-16 h-20 bg-slate-950 border-2 border-amber-500/80 rounded-lg flex items-center justify-center text-4xl font-black text-amber-400 shadow-inner">0</div>
+                        <button onclick="app.changeLockDial(0, -1)" class="w-12 h-10 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold rounded-b-xl border border-slate-600 text-lg">▼</button>
+                    </div>
+
+                    <span class="text-3xl font-bold text-slate-600">-</span>
+
+                    <!-- Digit Dial 2 -->
+                    <div class="flex flex-col items-center">
+                        <button onclick="app.changeLockDial(1, 1)" class="w-12 h-10 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold rounded-t-xl border border-slate-600 text-lg">▲</button>
+                        <div id="dial1" class="w-16 h-20 bg-slate-950 border-2 border-amber-500/80 rounded-lg flex items-center justify-center text-4xl font-black text-amber-400 shadow-inner">0</div>
+                        <button onclick="app.changeLockDial(1, -1)" class="w-12 h-10 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold rounded-b-xl border border-slate-600 text-lg">▼</button>
+                    </div>
+
+                    <span class="text-3xl font-bold text-slate-600">-</span>
+
+                    <!-- Digit Dial 3 -->
+                    <div class="flex flex-col items-center">
+                        <button onclick="app.changeLockDial(2, 1)" class="w-12 h-10 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold rounded-t-xl border border-slate-600 text-lg">▲</button>
+                        <div id="dial2" class="w-16 h-20 bg-slate-950 border-2 border-amber-500/80 rounded-lg flex items-center justify-center text-4xl font-black text-amber-400 shadow-inner">0</div>
+                        <button onclick="app.changeLockDial(2, -1)" class="w-12 h-10 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold rounded-b-xl border border-slate-600 text-lg">▼</button>
+                    </div>
+                </div>
+
+                <!-- Lock status message -->
+                <div id="lockMessage" class="hidden mb-6 p-3 rounded-xl font-bold text-sm"></div>
+
+                <button onclick="app.attemptUnlockBox()" class="w-full py-4 bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-xl rounded-2xl shadow-xl transition transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2">
+                    🔓 OPEN THE BOX
+                </button>
+            </div>
+        </div>
+
+
+        <!-- ========================================== -->
+        <!-- SCREEN 5: SURPRISE REWARD & VICTORY -->
+        <!-- ========================================== -->
+        <div id="screenVictory" class="hidden space-y-6 max-w-3xl mx-auto text-center relative">
+            <div class="glass-card p-8 rounded-3xl border-2 border-amber-400 bg-gradient-to-b from-slate-900 via-purple-950/80 to-slate-950 glow-box relative overflow-hidden">
+                
+                <div class="text-7xl mb-4 floating">🎉🎁🦉</div>
+                <h2 class="text-3xl sm:text-4xl font-black text-amber-400 uppercase tracking-wide">MYSTERY BOX UNLOCKED!</h2>
+                
+                <div class="my-6 p-4 bg-slate-950/80 rounded-2xl border border-amber-500/40 inline-block">
+                    <p class="text-sky-300 text-lg italic">"Congratulations, Owl Explorers! You mastered prepositions of place!"</p>
+                    <p class="text-xs text-slate-400 mt-1">- Oliver the Owl</p>
+                </div>
+
+                <!-- Surprise Reward Card -->
+                <div class="p-6 bg-gradient-to-r from-amber-500/20 via-purple-500/20 to-amber-500/20 rounded-2xl border border-amber-400/50 mb-6 transform transition hover:scale-105">
+                    <div class="text-5xl mb-2">🏆</div>
+                    <h3 class="text-2xl font-bold text-amber-300">YOU FOUND THE GOLDEN OWL BADGE!</h3>
+                    <p class="text-xs text-slate-300 mt-1">Special Classroom Award for Preposition Mastery</p>
+                </div>
+
+                <!-- XP Tally & Winner Announcement -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left mb-6">
+                    <div class="p-4 rounded-xl bg-sky-950/60 border border-sky-500/40">
+                        <span class="text-xs font-bold text-sky-400 block">🦉 TEAM OWL</span>
+                        <span id="finalOwlXp" class="text-3xl font-black text-amber-400">0 XP</span>
+                    </div>
+                    <div class="p-4 rounded-xl bg-orange-950/60 border border-orange-500/40">
+                        <span class="text-xs font-bold text-orange-400 block">📦 TEAM BOX</span>
+                        <span id="finalBoxXp" class="text-3xl font-black text-amber-400">0 XP</span>
+                    </div>
+                </div>
+
+                <div id="winnerBanner" class="p-4 rounded-2xl bg-amber-500 text-slate-950 font-black text-xl shadow-lg border border-amber-300 mb-6">
+                    🏆 THE OWL EXPLORERS OF THE DAY: <span id="winningTeamName">TEAM OWL</span>!
+                </div>
+
+                <div class="flex flex-wrap justify-center gap-3">
+                    <button onclick="app.resetGameConfirmed()" class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-sm transition border border-slate-600">
+                        🔄 PLAY AGAIN
+                    </button>
+                    <button onclick="app.showScreen('main')" class="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-sm transition">
+                        🏠 MAIN DASHBOARD
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ========================================== -->
+    <!-- TEACHER CONTROL PANEL MODAL -->
+    <!-- ========================================== -->
+    <div id="teacherModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card p-6 rounded-3xl max-w-lg w-full border border-purple-500/40 relative">
+            <button onclick="app.closeTeacherModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl font-bold">✕</button>
+            
+            <h3 class="text-2xl font-bold text-purple-300 mb-1 flex items-center gap-2">🧑‍🏫 Teacher Control Panel</h3>
+            <p class="text-xs text-slate-400 mb-4">Manage XP, reset challenges, or toggle secret digits visibility.</p>
+
+            <div class="space-y-4 text-sm">
+                
+                <!-- Quick XP Adjusters -->
+                <div class="p-3 bg-slate-900/90 rounded-2xl border border-slate-800">
+                    <span class="font-bold text-slate-300 block mb-2">Adjust Team XP</span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="flex gap-1">
+                            <button onclick="app.adjustXP('owl', 10)" class="flex-1 bg-sky-900/80 hover:bg-sky-800 text-sky-200 py-1.5 rounded-lg font-bold text-xs">+10 Owl</button>
+                            <button onclick="app.adjustXP('owl', -10)" class="px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs">-10</button>
+                        </div>
+                        <div class="flex gap-1">
+                            <button onclick="app.adjustXP('box', 10)" class="flex-1 bg-orange-900/80 hover:bg-orange-800 text-orange-200 py-1.5 rounded-lg font-bold text-xs">+10 Box</button>
+                            <button onclick="app.adjustXP('box', -10)" class="px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs">-10</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Combination Toggle -->
+                <div class="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 flex justify-between items-center">
+                    <div>
+                        <span class="font-bold text-slate-300 block">Reveal Combination Digits</span>
+                        <span class="text-xs text-slate-400">Show digits in secret box header</span>
+                    </div>
+                    <button id="toggleDigitsBtn" onclick="app.toggleDigitsVisibility()" class="px-3 py-1 bg-slate-800 text-amber-400 font-bold rounded-xl text-xs border border-slate-700">
+                        Show
+                    </button>
+                </div>
+
+                <!-- Reset Options -->
+                <div class="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 space-y-2">
+                    <span class="font-bold text-slate-300 block">Game Resets</span>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="app.resetXPOnly()" class="px-3 py-2 bg-amber-900/40 hover:bg-amber-800/60 text-amber-200 rounded-xl text-xs font-bold border border-amber-700/50">
+                            Reset XP Only
+                        </button>
+                        <button onclick="app.confirmFullReset()" class="px-3 py-2 bg-rose-900/40 hover:bg-rose-800/60 text-rose-200 rounded-xl text-xs font-bold border border-rose-700/50">
+                            Reset Entire Game
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="mt-6 text-right">
+                <button onclick="app.closeTeacherModal()" class="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs">
+                    Close Panel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TEAMS MANAGEMENT MODAL -->
+    <div id="teamsModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card p-6 rounded-3xl max-w-lg w-full border border-sky-500/40 relative">
+            <button onclick="app.closeTeamsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl font-bold">✕</button>
+            
+            <h3 class="text-2xl font-bold text-sky-300 mb-1 flex items-center gap-2">👥 Team Explorer Management</h3>
+            <p class="text-xs text-slate-400 mb-4">Add or remove students from Team Owl and Team Box.</p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div class="bg-slate-900/90 p-3 rounded-2xl border border-sky-500/30">
+                    <h4 class="font-bold text-sky-400 text-xs mb-2">🦉 Team Owl</h4>
+                    <div id="modalOwlList" class="space-y-1 max-h-36 overflow-y-auto text-xs"></div>
+                    <div class="mt-2 flex gap-1">
+                        <input id="modalOwlInput" type="text" placeholder="Name" class="w-full bg-slate-800 text-xs px-2 py-1 rounded-lg border border-slate-700">
+                        <button onclick="app.addStudent('owl', 'modalOwlInput')" class="bg-sky-600 px-2 py-1 rounded-lg text-xs font-bold text-white">Add</button>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/90 p-3 rounded-2xl border border-orange-500/30">
+                    <h4 class="font-bold text-orange-400 text-xs mb-2">📦 Team Box</h4>
+                    <div id="modalBoxList" class="space-y-1 max-h-36 overflow-y-auto text-xs"></div>
+                    <div class="mt-2 flex gap-1">
+                        <input id="modalBoxInput" type="text" placeholder="Name" class="w-full bg-slate-800 text-xs px-2 py-1 rounded-lg border border-slate-700">
+                        <button onclick="app.addStudent('box', 'modalBoxInput')" class="bg-orange-600 px-2 py-1 rounded-lg text-xs font-bold text-white">Add</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-right">
+                <button onclick="app.closeTeamsModal()" class="px-5 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs">
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- JAVASCRIPT APPLICATION LOGIC -->
+    <!-- ========================================== -->
+    <script>
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.soundOn = true;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+            }
+
+            playTone(freq, type, duration, startVol = 0.2, endVol = 0.001) {
+                if (!this.soundOn) return;
+                this.init();
+                if (!this.ctx) return;
+
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(startVol, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(endVol, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e){}
+            }
+
+            playCorrect() {
+                if (!this.soundOn) return;
+                this.playTone(523.25, 'triangle', 0.1, 0.25); // C5
+                setTimeout(() => this.playTone(659.25, 'triangle', 0.15, 0.25), 100); // E5
+                setTimeout(() => this.playTone(783.99, 'triangle', 0.25, 0.3), 200); // G5
+            }
+
+            playWrong() {
+                if (!this.soundOn) return;
+                this.playTone(220, 'sawtooth', 0.15, 0.2);
+                setTimeout(() => this.playTone(180, 'sawtooth', 0.25, 0.2), 120);
+            }
+
+            playXp() {
+                if (!this.soundOn) return;
+                this.playTone(880, 'sine', 0.08, 0.15);
+                setTimeout(() => this.playTone(1174.66, 'sine', 0.15, 0.2), 80);
+            }
+
+            playUnlock() {
+                if (!this.soundOn) return;
+                [440, 554.37, 659.25, 880].forEach((freq, idx) => {
+                    setTimeout(() => this.playTone(freq, 'sine', 0.2), idx * 90);
+                });
+            }
+
+            playVictory() {
+                if (!this.soundOn) return;
+                const notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50];
+                const delays = [0, 150, 300, 450, 650, 800];
+                notes.forEach((freq, idx) => {
+                    setTimeout(() => this.playTone(freq, 'triangle', 0.3, 0.3), delays[idx]);
+                });
+            }
+        }
+
+        class OwlExplorersApp {
+            constructor() {
+                this.sound = new SoundEngine();
+                
+                // Game state
+                this.state = {
+                    teamOwl: { xp: 0, members: ["Alex", "Maria"] },
+                    teamBox: { xp: 0, members: ["Leo", "Sofia"] },
+                    activeTeam: "owl", // 'owl' or 'box'
+                    secretDigits: [
+                        Math.floor(Math.random() * 9) + 1,
+                        Math.floor(Math.random() * 9) + 1,
+                        Math.floor(Math.random() * 9) + 1
+                    ],
+                    unlockedDigits: [false, false, false],
+                    completedChallenges: [false, false, false],
+                    badges: [],
+                    digitsVisibleTeacher: false,
+                    userLockDials: [0, 0, 0],
+                    currentScreen: "setup"
+                };
+
+                // Challenge 1 state (Memory Hunt)
+                this.c1Cards = [];
+                this.c1Flipped = [];
+                this.c1MatchedCount = 0;
+
+                // Challenge 2 state (Trivia Battle)
+                this.c2CurrentIndex = 0;
+                this.c2Questions = this.initTriviaQuestions();
+
+                // Challenge 3 state (Oliver's Secret Room)
+                this.c3ClueIndex = 0;
+                this.c3Clues = this.initRoomClues();
+
+                this.init();
+            }
+
+            init() {
+                this.loadProgress();
+                this.renderTeamRosters();
+                this.updateXpDisplays();
+                this.updateDigitsDisplay();
+                this.updateBadgesDisplay();
+
+                // Setup challenge components
+                this.initMemoryGame();
+                this.renderTriviaQuestion();
+                this.renderSecretRoom();
+            }
+
+            // Save and Load LocalStorage
+            saveProgress() {
+                try {
+                    localStorage.setItem("owl_explorers_data", JSON.stringify({
+                        teamOwl: this.state.teamOwl,
+                        teamBox: this.state.teamBox,
+                        secretDigits: this.state.secretDigits,
+                        unlockedDigits: this.state.unlockedDigits,
+                        completedChallenges: this.state.completedChallenges,
+                        badges: this.state.badges
+                    }));
+                } catch(e){}
+            }
+
+            loadProgress() {
+                try {
+                    const saved = localStorage.getItem("owl_explorers_data");
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        if (parsed.teamOwl) this.state.teamOwl = parsed.teamOwl;
+                        if (parsed.teamBox) this.state.teamBox = parsed.teamBox;
+                        if (parsed.secretDigits) this.state.secretDigits = parsed.secretDigits;
+                        if (parsed.unlockedDigits) this.state.unlockedDigits = parsed.unlockedDigits;
+                        if (parsed.completedChallenges) this.state.completedChallenges = parsed.completedChallenges;
+                        if (parsed.badges) this.state.badges = parsed.badges;
+                    }
+                } catch(e){}
+            }
+
+            toggleSound() {
+                this.sound.soundOn = !this.sound.soundOn;
+                document.getElementById('soundIcon').innerText = this.sound.soundOn ? '🔊' : '🔇';
+            }
+
+            setActiveTeam(team) {
+                this.state.activeTeam = team;
+                const turnOwl = document.getElementById('turnOwlBtn');
+                const turnBox = document.getElementById('turnBoxBtn');
+                const turnOwlC3 = document.getElementById('turnOwlBtnC3');
+                const turnBoxC3 = document.getElementById('turnBoxBtnC3');
+
+                if (team === 'owl') {
+                    if (turnOwl) turnOwl.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-600 text-white transition";
+                    if (turnBox) turnBox.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-400 transition";
+                    if (turnOwlC3) turnOwlC3.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-600 text-white transition";
+                    if (turnBoxC3) turnBoxC3.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-400 transition";
+                } else {
+                    if (turnOwl) turnOwl.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-400 transition";
+                    if (turnBox) turnBox.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-orange-600 text-white transition";
+                    if (turnOwlC3) turnOwlC3.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-400 transition";
+                    if (turnBoxC3) turnBoxC3.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-orange-600 text-white transition";
+                }
+            }
+
+            showScreen(screenId) {
+                const screens = ['setup', 'challenge1', 'challenge2', 'challenge3', 'lock', 'victory'];
+                
+                // Navigation restriction checks
+                if (screenId === 'challenge2' && !this.state.completedChallenges[0]) {
+                    this.showToast('⚠️ Complete Challenge 1 first!');
+                    return;
+                }
+                if (screenId === 'challenge3' && !this.state.completedChallenges[1]) {
+                    this.showToast('⚠️ Complete Challenge 2 first!');
+                    return;
+                }
+                if (screenId === 'lock' && !this.state.completedChallenges[2]) {
+                    this.showToast('⚠️ Discover all 3 clues first!');
+                    return;
+                }
+
+                screens.forEach(s => {
+                    const el = document.getElementById('screen' + s.charAt(0).toUpperCase() + s.slice(1));
+                    if (el) el.classList.add('hidden');
+                });
+
+                if (screenId === 'main') screenId = 'challenge1';
+
+                const targetEl = document.getElementById('screen' + screenId.charAt(0).toUpperCase() + screenId.slice(1));
+                if (targetEl) targetEl.classList.remove('hidden');
+
+                this.state.currentScreen = screenId;
+                this.updateNavigationUI();
+            }
+
+            updateNavigationUI() {
+                const n1 = document.getElementById('navC1');
+                const n2 = document.getElementById('navC2');
+                const n3 = document.getElementById('navC3');
+                const nLock = document.getElementById('navLock');
+
+                // C1 Active
+                if (this.state.currentScreen === 'challenge1') {
+                    n1.className = "py-2 rounded-xl transition bg-sky-600 text-white flex items-center justify-center gap-1 shadow";
+                } else {
+                    n1.className = "py-2 rounded-xl transition bg-slate-800 text-slate-300 flex items-center justify-center gap-1";
+                }
+
+                // C2
+                if (this.state.completedChallenges[0]) {
+                    n2.classList.remove('opacity-50', 'cursor-not-allowed');
+                    n2.className = this.state.currentScreen === 'challenge2' 
+                        ? "py-2 rounded-xl transition bg-purple-600 text-white flex items-center justify-center gap-1 shadow"
+                        : "py-2 rounded-xl transition bg-slate-800 text-slate-300 flex items-center justify-center gap-1";
+                }
+
+                // C3
+                if (this.state.completedChallenges[1]) {
+                    n3.classList.remove('opacity-50', 'cursor-not-allowed');
+                    n3.className = this.state.currentScreen === 'challenge3' 
+                        ? "py-2 rounded-xl transition bg-amber-600 text-white flex items-center justify-center gap-1 shadow"
+                        : "py-2 rounded-xl transition bg-slate-800 text-slate-300 flex items-center justify-center gap-1";
+                }
+
+                // Mystery Box Lock
+                if (this.state.completedChallenges[2]) {
+                    nLock.classList.remove('opacity-50', 'cursor-not-allowed');
+                    nLock.className = this.state.currentScreen === 'lock' 
+                        ? "py-2 rounded-xl transition bg-orange-600 text-white flex items-center justify-center gap-1 shadow glow-box"
+                        : "py-2 rounded-xl transition bg-slate-800 text-slate-300 flex items-center justify-center gap-1";
+                }
+            }
+
+            addXP(team, amount) {
+                if (team === 'owl') {
+                    this.state.teamOwl.xp += amount;
+                } else {
+                    this.state.teamBox.xp += amount;
+                }
+                this.sound.playXp();
+                this.updateXpDisplays();
+                this.saveProgress();
+            }
+
+            updateXpDisplays() {
+                document.getElementById('owlXpDisplay').innerText = this.state.teamOwl.xp;
+                document.getElementById('boxXpDisplay').innerText = this.state.teamBox.xp;
+            }
+
+            awardBadge(badge) {
+                if (!this.state.badges.includes(badge)) {
+                    this.state.badges.push(badge);
+                    this.updateBadgesDisplay();
+                    this.saveProgress();
+                }
+            }
+
+            updateBadgesDisplay() {
+                const container = document.getElementById('badgesContainer');
+                if (!container) return;
+
+                if (this.state.badges.length === 0) {
+                    container.innerHTML = '<span class="text-slate-500 italic text-xs">Complete challenges to earn badges!</span>';
+                    return;
+                }
+
+                const badgeMap = {
+                    'memory_master': { icon: '🧠', title: 'Memory Master' },
+                    'preposition_expert': { icon: '⚡', title: 'Preposition Expert' },
+                    'secret_room_explorer': { icon: '🔎', title: 'Secret Room Explorer' },
+                    'golden_owl': { icon: '🏆', title: 'Golden Owl Explorer' }
+                };
+
+                container.innerHTML = this.state.badges.map(b => {
+                    const info = badgeMap[b];
+                    return `<span class="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-xl text-xs font-bold flex items-center gap-1">
+                        ${info.icon} ${info.title}
+                    </span>`;
+                }).join('');
+            }
+
+            unlockDigit(index) {
+                this.state.unlockedDigits[index] = true;
+                this.state.completedChallenges[index] = true;
+                this.sound.playUnlock();
+                this.updateDigitsDisplay();
+                this.updateNavigationUI();
+                this.saveProgress();
+            }
+
+            updateDigitsDisplay() {
+                for (let i = 0; i < 3; i++) {
+                    const el = document.getElementById(`digit${i+1}Display`);
+                    if (el) {
+                        if (this.state.unlockedDigits[i] || this.state.digitsVisibleTeacher) {
+                            el.innerText = this.state.secretDigits[i];
+                            el.className = "w-12 h-14 bg-amber-500/20 border-2 border-amber-400 rounded-xl flex items-center justify-center text-2xl font-black text-amber-300 shadow-md animate-bounce";
+                        } else {
+                            el.innerText = "?";
+                            el.className = "w-12 h-14 bg-slate-950 border-2 border-amber-500/50 rounded-xl flex items-center justify-center text-2xl font-black text-amber-400 shadow-inner";
+                        }
+                    }
+                }
+            }
+
+            addStudent(team, inputId) {
+                const id = inputId || (team === 'owl' ? 'owlNameInput' : 'boxNameInput');
+                const input = document.getElementById(id);
+                if (!input || !input.value.trim()) return;
+
+                const name = input.value.trim();
+                if (team === 'owl') {
+                    this.state.teamOwl.members.push(name);
+                } else {
+                    this.state.teamBox.members.push(name);
+                }
+
+                input.value = "";
+                this.renderTeamRosters();
+                this.saveProgress();
+            }
+
+            removeStudent(team, index) {
+                if (team === 'owl') {
+                    this.state.teamOwl.members.splice(index, 1);
+                } else {
+                    this.state.teamBox.members.splice(index, 1);
+                }
+                this.renderTeamRosters();
+                this.saveProgress();
+            }
+
+            renderTeamRosters() {
+                // Main setup lists
+                const owlList = document.getElementById('owlMemberList');
+                const boxList = document.getElementById('boxMemberList');
+                
+                if (owlList) {
+                    owlList.innerHTML = this.state.teamOwl.members.map((m, i) => `
+                        <div class="flex justify-between items-center bg-slate-800/80 px-2.5 py-1 rounded-lg text-slate-200">
+                            <span>🦉 ${m}</span>
+                            <button onclick="app.removeStudent('owl', ${i})" class="text-rose-400 hover:text-rose-300 font-bold text-xs">✕</button>
+                        </div>
+                    `).join('') || '<p class="text-xs text-slate-500 italic p-1">No explorers added yet</p>';
+                }
+
+                if (boxList) {
+                    boxList.innerHTML = this.state.teamBox.members.map((m, i) => `
+                        <div class="flex justify-between items-center bg-slate-800/80 px-2.5 py-1 rounded-lg text-slate-200">
+                            <span>📦 ${m}</span>
+                            <button onclick="app.removeStudent('box', ${i})" class="text-rose-400 hover:text-rose-300 font-bold text-xs">✕</button>
+                        </div>
+                    `).join('') || '<p class="text-xs text-slate-500 italic p-1">No explorers added yet</p>';
+                }
+
+                // Modal lists
+                const modalOwl = document.getElementById('modalOwlList');
+                const modalBox = document.getElementById('modalBoxList');
+                if (modalOwl) modalOwl.innerHTML = owlList ? owlList.innerHTML : '';
+                if (modalBox) modalBox.innerHTML = boxList ? boxList.innerHTML : '';
+
+                // Counts
+                document.getElementById('teamOwlMembersCount').innerText = `${this.state.teamOwl.members.length} Explorers`;
+                document.getElementById('teamBoxMembersCount').innerText = `${this.state.teamBox.members.length} Explorers`;
+                document.getElementById('owlCountBadge').innerText = this.state.teamOwl.members.length;
+                document.getElementById('boxCountBadge').innerText = this.state.teamBox.members.length;
+            }
+
+            startGame() {
+                this.showScreen('challenge1');
+            }
+
+            initMemoryGame() {
+                const pairsData = [
+                    { id: 1, item: "Owl & Box", visual: "🦉📦", sentence: "The owl is behind the box." },
+                    { id: 2, item: "Book & Table", visual: "📚🪵", sentence: "The book is on the table." },
+                    { id: 3, item: "Ball & Chair", visual: "⚽🪑", sentence: "The ball is under the chair." },
+                    { id: 4, item: "Backpack & Desk", visual: "🎒🖥️", sentence: "The backpack is next to the desk." },
+                    { id: 5, item: "Cat & Box", visual: "🐱📦", sentence: "The cat is in the box." },
+                    { id: 6, item: "Clock & Door", visual: "⏰🚪", sentence: "The clock is opposite the door." }
+                ];
+
+                // Create cards (1 visual card + 1 sentence card per pair)
+                let deck = [];
+                pairsData.forEach(p => {
+                    deck.push({ pairId: p.id, type: 'visual', content: p.visual, title: p.item, sentence: p.sentence });
+                    deck.push({ pairId: p.id, type: 'text', content: p.sentence, title: p.item, sentence: p.sentence });
+                });
+
+                // Shuffle
+                deck.sort(() => Math.random() - 0.5);
+                this.c1Cards = deck.map((c, i) => ({ ...c, id: i, flipped: false, matched: false }));
+
+                this.renderMemoryGrid();
+            }
+
+            renderMemoryGrid() {
+                const grid = document.getElementById('memoryGrid');
+                if (!grid) return;
+
+                grid.innerHTML = this.c1Cards.map(c => `
+                    <div class="h-28 perspective-1000 cursor-pointer" onclick="app.handleCardClick(${c.id})">
+                        <div class="relative w-full h-full transform-style-3d duration-500 ${c.flipped || c.matched ? 'rotate-y-180' : ''}">
+                            <!-- Front (Card Back design) -->
+                            <div class="absolute inset-0 bg-gradient-to-br from-slate-800 to-sky-950 border-2 border-sky-500/40 rounded-2xl flex items-center justify-center text-2xl backface-hidden shadow-md hover:border-amber-400 transition">
+                                🦉
+                            </div>
+                            <!-- Back (Card Content design) -->
+                            <div class="absolute inset-0 bg-slate-900 border-2 ${c.matched ? 'border-emerald-500 bg-emerald-950/40' : 'border-amber-400'} rounded-2xl flex flex-col items-center justify-center p-2 text-center rotate-y-180 backface-hidden shadow-lg">
+                                ${c.type === 'visual' ? `<div class="text-3xl mb-1">${c.content}</div><div class="text-[11px] font-bold text-amber-300">${c.title}</div>` : `<div class="text-xs font-black text-slate-100 leading-snug">${c.content}</div>`}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            handleCardClick(id) {
+                const card = this.c1Cards[id];
+                if (!card || card.flipped || card.matched || this.c1Flipped.length >= 2) return;
+
+                card.flipped = true;
+                this.c1Flipped.push(card);
+                this.renderMemoryGrid();
+
+                if (this.c1Flipped.length === 2) {
+                    const [card1, card2] = this.c1Flipped;
+
+                    if (card1.pairId === card2.pairId) {
+                        // Correct Pair Match
+                        card1.matched = true;
+                        card2.matched = true;
+                        this.c1Flipped = [];
+                        this.c1MatchedCount++;
+
+                        this.sound.playCorrect();
+                        this.addXP(this.state.activeTeam, 10);
+                        this.showC1Feedback(`✨ CORRECT! "${card1.sentence}" +10 XP for ${this.state.activeTeam === 'owl' ? 'Team Owl' : 'Team Box'}!`, true);
+
+                        if (this.c1MatchedCount === 6) {
+                            setTimeout(() => {
+                                this.awardBadge('memory_master');
+                                this.unlockDigit(0);
+                                document.getElementById('c1UnlockedDigit').innerText = this.state.secretDigits[0];
+                                document.getElementById('c1CompleteBanner').classList.remove('hidden');
+                            }, 800);
+                        }
+                    } else {
+                        // Incorrect Match
+                        this.sound.playWrong();
+                        this.showC1Feedback("❌ Try again, Owl Explorer!", false);
+                        setTimeout(() => {
+                            card1.flipped = false;
+                            card2.flipped = false;
+                            this.c1Flipped = [];
+                            this.renderMemoryGrid();
+                        }, 1200);
+                    }
+                }
+            }
+
+            showC1Feedback(msg, isSuccess) {
+                const el = document.getElementById('c1Feedback');
+                if (!el) return;
+                el.innerText = msg;
+                el.className = `p-3 rounded-2xl text-center text-sm font-bold animate-bounce ${isSuccess ? 'bg-emerald-900/80 text-emerald-200 border border-emerald-500' : 'bg-rose-900/80 text-rose-200 border border-rose-500'}`;
+                el.classList.remove('hidden');
+                setTimeout(() => el.classList.add('hidden'), 2500);
+            }
+
+
+            initTriviaQuestions() {
+                return [
+                    {
+                        q: "Where is the football?",
+                        options: ["On the chair", "Under the chair", "Behind the chair", "Next to the chair"],
+                        correct: 1, // Under
+                        preposition: "under",
+                        renderVisual: () => `
+                            <svg class="w-48 h-36" viewBox="0 0 200 150">
+                                <!-- Chair -->
+                                <path d="M 60 40 L 140 40 L 140 80 L 60 80 Z" fill="#b45309" />
+                                <rect x="65" y="80" width="10" height="50" fill="#78350f" />
+                                <rect x="125" y="80" width="10" height="50" fill="#78350f" />
+                                <path d="M 60 10 L 140 10 L 140 40 L 60 40 Z" fill="#92400e" />
+                                <!-- Ball under -->
+                                <circle cx="100" cy="115" r="18" fill="#ef4444" stroke="#ffffff" stroke-width="3" />
+                            </svg>
+                        `
+                    },
+                    {
+                        q: "Where is the cat?",
+                        options: ["In the box", "Under the box", "Opposite the box", "Behind the box"],
+                        correct: 0, // In
+                        preposition: "in",
+                        renderVisual: () => `
+                            <svg class="w-48 h-36" viewBox="0 0 200 150">
+                                <!-- Box -->
+                                <rect x="50" y="60" width="100" height="70" fill="#d97706" rx="6" />
+                                <path d="M 40 60 L 100 40 L 160 60 Z" fill="#b45309" />
+                                <!-- Cat inside peaking -->
+                                <text x="82" y="85" font-size="32">🐱</text>
+                            </svg>
+                        `
+                    },
+                    {
+                        q: "Where is Oliver the Owl?",
+                        options: ["Next to the books", "Between the books", "Under the books", "Among the books"],
+                        correct: 1, // Between
+                        preposition: "between",
+                        renderVisual: () => `
+                            <svg class="w-48 h-36" viewBox="0 0 200 150">
+                                <!-- Book Left -->
+                                <rect x="30" y="40" width="25" height="80" fill="#0284c7" rx="3"/>
+                                <!-- Owl in middle -->
+                                <text x="82" y="90" font-size="36">🦉</text>
+                                <!-- Book Right -->
+                                <rect x="145" y="40" width="25" height="80" fill="#16a34a" rx="3"/>
+                            </svg>
+                        `
+                    },
+                    {
+                        q: "Where is the golden star?",
+                        options: ["Behind the circles", "In front of the circles", "Among the purple circles", "Under the circles"],
+                        correct: 2, // Among
+                        preposition: "among",
+                        renderVisual: () => `
+                            <svg class="w-48 h-36" viewBox="0 0 200 150">
+                                <circle cx="40" cy="50" r="16" fill="#a855f7" />
+                                <circle cx="160" cy="60" r="18" fill="#a855f7" />
+                                <circle cx="50" cy="110" r="15" fill="#a855f7" />
+                                <circle cx="150" cy="115" r="17" fill="#a855f7" />
+                                <!-- Star among them -->
+                                <text x="85" y="90" font-size="36">⭐</text>
+                            </svg>
+                        `
+                    },
+                    {
+                        q: "Where is the lamp?",
+                        options: ["In front of the bed", "Next to the bed", "Under the bed", "Opposite the bed"],
+                        correct: 1, // Next to
+                        preposition: "next to",
+                        renderVisual: () => `
+                            <svg class="w-48 h-36" viewBox="0 0 200 150">
+                                <!-- Bed -->
+                                <rect x="20" y="70" width="100" height="50" fill="#3b82f6" rx="5" />
+                                <rect x="20" y="60" width="30" height="20" fill="#ffffff" rx="3" />
+                                <!-- Lamp next to bed -->
+                                <path d="M 145 60 L 165 60 L 175 90 L 135 90 Z" fill="#eab308" />
+                                <rect x="153" y="90" width="4" height="30" fill="#64748b" />
+                            </svg>
+                        `
+                    },
+                    {
+                        q: "Where is the backpack?",
+                        options: ["In front of the desk", "Behind the desk", "On the desk", "Under the desk"],
+                        correct: 0, // In front of
+                        preposition: "in front of",
+                        renderVisual: () => `
+                            <svg class="w-48 h-36" viewBox="0 0 200 150">
+                                <!-- Desk background -->
+                                <rect x="40" y="30" width="120" height="60" fill="#78350f" rx="4" />
+                                <!-- Backpack overlapping in front -->
+                                <text x="82" y="120" font-size="42">🎒</text>
+                            </svg>
+                        `
+                    },
+                    {
+                        q: "Where is the painting?",
+                        options: ["Opposite the window", "In the window", "Under the window", "Behind the window"],
+                        correct: 0, // Opposite
+                        preposition: "opposite",
+                        renderVisual: () => `
+                            <svg class="w-48 h-36" viewBox="0 0 200 150">
+                                <!-- Left wall window -->
+                                <rect x="15" y="30" width="40" height="70" fill="#38bdf8" stroke="#ffffff" stroke-width="3" />
+                                <line x1="35" y1="30" x2="35" y2="100" stroke="#ffffff" stroke-width="2"/>
+                                <!-- Right wall Painting -->
+                                <rect x="140" y="30" width="45" height="60" fill="#f59e0b" stroke="#ffffff" stroke-width="3" />
+                                <text x="150" y="70" font-size="20">🖼️</text>
+                            </svg>
+                        `
+                    },
+                    {
+                        q: "Where is the magic book?",
+                        options: ["Under the desk", "Behind the desk", "On the desk", "Opposite the desk"],
+                        correct: 2, // On
+                        preposition: "on",
+                        renderVisual: () => `
+                            <svg class="w-48 h-36" viewBox="0 0 200 150">
+                                <!-- Table -->
+                                <rect x="30" y="80" width="140" height="15" fill="#92400e" />
+                                <rect x="40" y="95" width="12" height="40" fill="#78350f" />
+                                <rect x="148" y="95" width="12" height="40" fill="#78350f" />
+                                <!-- Book on table -->
+                                <text x="85" y="75" font-size="32">📚</text>
+                            </svg>
+                        `
+                    },
+                    {
+                        q: "Where is Oliver hiding?",
+                        options: ["In front of the curtain", "Behind the curtain", "On the curtain", "Under the curtain"],
+                        correct: 1, // Behind
+                        preposition: "behind",
+                        renderVisual: () => `
+                            <svg class="w-48 h-36" viewBox="0 0 200 150">
+                                <!-- Owl hiding behind -->
+                                <text x="60" y="85" font-size="36">🦉</text>
+                                <!-- Curtain covering -->
+                                <path d="M 80 20 C 100 50, 80 90, 100 130 L 160 130 L 160 20 Z" fill="#dc2626" />
+                            </svg>
+                        `
+                    },
+                    {
+                        q: "Where is the key?",
+                        options: ["Next to the box", "In the box", "Under the box", "Behind the box"],
+                        correct: 1, // In
+                        preposition: "in",
+                        renderVisual: () => `
+                            <svg class="w-48 h-36" viewBox="0 0 200 150">
+                                <rect x="60" y="60" width="80" height="60" fill="#854d0e" rx="4"/>
+                                <text x="85" y="95" font-size="30">🔑</text>
+                            </svg>
+                        `
+                    }
+                ];
+            }
+
+            renderTriviaQuestion() {
+                const q = this.c2Questions[this.c2CurrentIndex];
+                if (!q) return;
+
+                document.getElementById('c2QIndex').innerText = this.c2CurrentIndex + 1;
+                document.getElementById('c2QTotal').innerText = this.c2Questions.length;
+
+                // Visual box
+                document.getElementById('triviaVisualBox').innerHTML = q.renderVisual();
+
+                // Question text
+                document.getElementById('triviaQuestionText').innerText = q.q;
+
+                // Options
+                const optionsGrid = document.getElementById('triviaOptionsGrid');
+                optionsGrid.innerHTML = q.options.map((opt, idx) => `
+                    <label class="flex items-center gap-3 bg-slate-900 hover:bg-slate-800 p-3 rounded-xl border border-slate-700 cursor-pointer transition">
+                        <input type="radio" name="triviaOpt" value="${idx}" class="w-4 h-4 text-purple-600 focus:ring-purple-500">
+                        <span class="text-sm font-bold text-slate-200">${opt}</span>
+                    </label>
+                `).join('');
+            }
+
+            submitTriviaAnswer(team) {
+                const selected = document.querySelector('input[name="triviaOpt"]:checked');
+                if (!selected) {
+                    this.showToast("⚠️ Please select an answer first!");
+                    return;
+                }
+
+                const userVal = parseInt(selected.value);
+                const q = this.c2Questions[this.c2CurrentIndex];
+
+                if (userVal === q.correct) {
+                    // Correct!
+                    this.sound.playCorrect();
+                    this.addXP(team, 10);
+                    this.showC2Feedback(`✅ CORRECT! +10 XP awarded to ${team === 'owl' ? 'Team Owl' : 'Team Box'}!`, true);
+
+                    this.c2CurrentIndex++;
+
+                    if (this.c2CurrentIndex >= this.c2Questions.length) {
+                        setTimeout(() => {
+                            this.awardBadge('preposition_expert');
+                            this.unlockDigit(1);
+                            document.getElementById('c2UnlockedDigit').innerText = this.state.secretDigits[1];
+                            document.getElementById('c2CompleteBanner').classList.remove('hidden');
+                        }, 1000);
+                    } else {
+                        setTimeout(() => this.renderTriviaQuestion(), 1200);
+                    }
+                } else {
+                    // Incorrect
+                    this.sound.playWrong();
+                    this.showC2Feedback("❌ NOT QUITE! Try again, Explorers.", false);
+                }
+            }
+
+            showC2Feedback(msg, isSuccess) {
+                const el = document.getElementById('c2FeedbackBanner');
+                if (!el) return;
+                el.innerText = msg;
+                el.className = `p-4 rounded-2xl text-center font-bold text-base ${isSuccess ? 'bg-emerald-900/90 text-emerald-200 border border-emerald-500' : 'bg-rose-900/90 text-rose-200 border border-rose-500'}`;
+                el.classList.remove('hidden');
+                setTimeout(() => el.classList.add('hidden'), 2000);
+            }
+
+
+            initRoomClues() {
+                return [
+                    { id: 'key', clue: "Find the key that is BETWEEN the books.", targetId: 'itemKey' },
+                    { id: 'cat', clue: "Find the cat that is UNDER the desk.", targetId: 'itemCat' },
+                    { id: 'notebook', clue: "Find the notebook IN FRONT OF the window.", targetId: 'itemNotebook' },
+                    { id: 'coin', clue: "Find the golden coin that is IN the box.", targetId: 'itemCoin' },
+                    { id: 'star', clue: "Find the yellow star AMONG the poster shapes.", targetId: 'itemStar' },
+                    { id: 'owl_statue', clue: "Find the small owl statue NEXT TO the lamp.", targetId: 'itemOwlStatue' },
+                    { id: 'map', clue: "Find the map that is BEHIND the chair.", targetId: 'itemMap' },
+                    { id: 'clock', clue: "Find the wall clock OPPOSITE the door.", targetId: 'itemClock' }
+                ];
+            }
+
+            renderSecretRoom() {
+                const container = document.getElementById('roomContainer');
+                if (!container) return;
+
+                // Interactive SVG Room Layout
+                container.innerHTML = `
+                    <svg class="w-full h-full" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet">
+                        <!-- Background Room Walls & Floor -->
+                        <rect x="0" y="0" width="800" height="360" fill="#0f172a" />
+                        <rect x="0" y="360" width="800" height="140" fill="#1e293b" />
+                        <!-- Floor carpet -->
+                        <ellipse cx="400" cy="430" rx="280" ry="50" fill="#334155" />
+
+                        <!-- Window on Left Wall -->
+                        <rect x="50" y="40" width="120" height="150" fill="#0284c7" stroke="#cbd5e1" stroke-width="6" rx="4" />
+                        <line x1="110" y1="40" x2="110" y2="190" stroke="#cbd5e1" stroke-width="4"/>
+                        <line x1="50" y1="115" x2="170" y2="115" stroke="#cbd5e1" stroke-width="4"/>
+
+                        <!-- Door on Right Wall -->
+                        <rect x="660" y="100" width="110" height="260" fill="#78350f" stroke="#451a03" stroke-width="6" rx="4"/>
+                        <circle cx="680" cy="230" r="8" fill="#fbbf24"/>
+
+                        <!-- Item: Wall Clock (Opposite Door / On Top Wall) -->
+                        <g class="room-item" id="itemClock" onclick="app.handleRoomItemClick('itemClock')">
+                            <circle cx="400" cy="70" r="32" fill="#f8fafc" stroke="#334155" stroke-width="6"/>
+                            <text x="388" y="78" font-size="24">⏰</text>
+                        </g>
+
+                        <!-- Item: Star among poster shapes (Top Wall Left) -->
+                        <g id="poster">
+                            <rect x="230" y="50" width="100" height="120" fill="#1e1b4b" stroke="#4338ca" stroke-width="3" rx="4"/>
+                            <circle cx="250" cy="80" r="10" fill="#a855f7"/>
+                            <circle cx="290" cy="130" r="12" fill="#a855f7"/>
+                            <rect x="280" y="70" width="18" height="18" fill="#a855f7"/>
+                            <!-- Target Star -->
+                            <g class="room-item" id="itemStar" onclick="app.handleRoomItemClick('itemStar')">
+                                <text x="250" y="125" font-size="28">⭐</text>
+                            </g>
+                        </g>
+
+                        <!-- Big Desk in Center -->
+                        <rect x="260" y="240" width="280" height="20" fill="#92400e" rx="4"/>
+                        <rect x="280" y="260" width="20" height="130" fill="#78350f"/>
+                        <rect x="500" y="260" width="20" height="130" fill="#78350f"/>
+
+                        <!-- Item: Cat UNDER desk -->
+                        <g class="room-item" id="itemCat" onclick="app.handleRoomItemClick('itemCat')">
+                            <text x="370" y="375" font-size="40">🐱</text>
+                        </g>
+
+                        <!-- Items on Desk: Lamp & Owl Statue NEXT TO Lamp -->
+                        <g id="lampGroup">
+                            <path d="M 280 180 L 320 180 L 330 210 L 270 210 Z" fill="#f59e0b"/>
+                            <rect x="297" y="210" width="6" height="30" fill="#64748b"/>
+                        </g>
+                        <!-- Target Owl Statue NEXT TO Lamp -->
+                        <g class="room-item" id="itemOwlStatue" onclick="app.handleRoomItemClick('itemOwlStatue')">
+                            <text x="330" y="238" font-size="28">🦉</text>
+                        </g>
+
+                        <!-- Books Stack on Desk & Key BETWEEN Books -->
+                        <rect x="440" y="190" width="18" height="50" fill="#0284c7" rx="2"/>
+                        <rect x="480" y="190" width="18" height="50" fill="#16a34a" rx="2"/>
+                        <!-- Target Key BETWEEN books -->
+                        <g class="room-item" id="itemKey" onclick="app.handleRoomItemClick('itemKey')">
+                            <text x="455" y="225" font-size="22">🔑</text>
+                        </g>
+
+                        <!-- Item: Notebook IN FRONT OF Window -->
+                        <g class="room-item" id="itemNotebook" onclick="app.handleRoomItemClick('itemNotebook')">
+                            <text x="85" y="175" font-size="34">📓</text>
+                        </g>
+
+                        <!-- Chair and Map BEHIND Chair -->
+                        <g id="chairGroup">
+                            <!-- Item: Map BEHIND chair -->
+                            <g class="room-item" id="itemMap" onclick="app.handleRoomItemClick('itemMap')">
+                                <text x="175" y="310" font-size="36">🗺️</text>
+                            </g>
+                            <!-- Chair in front of map -->
+                            <rect x="180" y="280" width="70" height="70" fill="#dc2626" rx="6"/>
+                            <rect x="185" y="350" width="10" height="50" fill="#991b1b"/>
+                            <rect x="235" y="350" width="10" height="50" fill="#991b1b"/>
+                        </g>
+
+                        <!-- Box / Chest and Coin IN Box -->
+                        <g id="chestGroup">
+                            <rect x="570" y="320" width="90" height="60" fill="#b45309" rx="6"/>
+                            <!-- Target Coin IN Box -->
+                            <g class="room-item" id="itemCoin" onclick="app.handleRoomItemClick('itemCoin')">
+                                <text x="600" y="358" font-size="32">🪙</text>
+                            </g>
+                        </g>
+                    </svg>
+                `;
+
+                this.updateC3ClueDisplay();
+            }
+
+            updateC3ClueDisplay() {
+                const currentClue = this.c3Clues[this.c3ClueIndex];
+                if (!currentClue) return;
+
+                document.getElementById('c3ClueIndex').innerText = this.c3ClueIndex + 1;
+                document.getElementById('c3ClueTotal').innerText = this.c3Clues.length;
+                document.getElementById('c3ClueText').innerText = `"${currentClue.clue}"`;
+            }
+
+            handleRoomItemClick(clickedId) {
+                const currentClue = this.c3Clues[this.c3ClueIndex];
+                if (!currentClue) return;
+
+                if (clickedId === currentClue.targetId) {
+                    // Correct object found!
+                    this.sound.playCorrect();
+                    this.addXP(this.state.activeTeam, 15);
+                    this.showC3Feedback(`✨ CORRECT! You found it! +15 XP for ${this.state.activeTeam === 'owl' ? 'Team Owl' : 'Team Box'}!`, true);
+
+                    this.c3ClueIndex++;
+
+                    if (this.c3ClueIndex >= this.c3Clues.length) {
+                        setTimeout(() => {
+                            this.awardBadge('secret_room_explorer');
+                            this.unlockDigit(2);
+                            document.getElementById('c3UnlockedDigit').innerText = this.state.secretDigits[2];
+                            document.getElementById('c3CompleteBanner').classList.remove('hidden');
+                        }, 1000);
+                    } else {
+                        this.updateC3ClueDisplay();
+                    }
+                } else {
+                    // Incorrect object clicked
+                    this.sound.playWrong();
+                    this.showC3Feedback("❌ Look carefully! Check the preposition in Oliver's clue.", false);
+                }
+            }
+
+            showC3Feedback(msg, isSuccess) {
+                const el = document.getElementById('c3Feedback');
+                if (!el) return;
+                el.innerText = msg;
+                el.className = `p-3 rounded-2xl text-center text-sm font-bold ${isSuccess ? 'bg-emerald-900/80 text-emerald-200 border border-emerald-500' : 'bg-rose-900/80 text-rose-200 border border-rose-500'}`;
+                el.classList.remove('hidden');
+                setTimeout(() => el.classList.add('hidden'), 2200);
+            }
+
+
+            changeLockDial(dialIdx, delta) {
+                this.sound.playXp();
+                let val = this.state.userLockDials[dialIdx] + delta;
+                if (val > 9) val = 0;
+                if (val < 0) val = 9;
+                this.state.userLockDials[dialIdx] = val;
+                document.getElementById(`dial${dialIdx}`).innerText = val;
+            }
+
+            attemptUnlockBox() {
+                const [d1, d2, d3] = this.state.userLockDials;
+                const [s1, s2, s3] = this.state.secretDigits;
+
+                const msgEl = document.getElementById('lockMessage');
+
+                if (d1 === s1 && d2 === s2 && d3 === s3) {
+                    // UNLOCKED SUCCESS!
+                    this.sound.playVictory();
+                    this.awardBadge('golden_owl');
+                    this.triggerConfetti();
+
+                    this.showVictoryScreen();
+                } else {
+                    // INCORRECT COMBINATION
+                    this.sound.playWrong();
+                    msgEl.innerText = "❌ INCORRECT COMBINATION! Check your discovered digits and try again.";
+                    msgEl.className = "mb-6 p-3 rounded-xl font-bold text-sm bg-rose-900/80 text-rose-200 border border-rose-500";
+                    msgEl.classList.remove('hidden');
+                }
+            }
+
+            showVictoryScreen() {
+                this.showScreen('victory');
+
+                document.getElementById('finalOwlXp').innerText = `${this.state.teamOwl.xp} XP`;
+                document.getElementById('finalBoxXp').innerText = `${this.state.teamBox.xp} XP`;
+
+                const winnerBanner = document.getElementById('winnerBanner');
+                const winnerName = document.getElementById('winningTeamName');
+
+                if (this.state.teamOwl.xp > this.state.teamBox.xp) {
+                    winnerName.innerText = "🦉 TEAM OWL";
+                    winnerBanner.className = "p-4 rounded-2xl bg-sky-500 text-slate-950 font-black text-xl shadow-lg border border-sky-300 mb-6";
+                } else if (this.state.teamBox.xp > this.state.teamOwl.xp) {
+                    winnerName.innerText = "📦 TEAM BOX";
+                    winnerBanner.className = "p-4 rounded-2xl bg-orange-500 text-slate-950 font-black text-xl shadow-lg border border-orange-300 mb-6";
+                } else {
+                    winnerName.innerText = "🦉 TEAM OWL & 📦 TEAM BOX (TIE!)";
+                    winnerBanner.className = "p-4 rounded-2xl bg-amber-500 text-slate-950 font-black text-xl shadow-lg border border-amber-300 mb-6";
+                }
+            }
+
+            triggerConfetti() {
+                for (let i = 0; i < 50; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle text-2xl';
+                    particle.innerText = ['⭐', '🦉', '📦', '✨', '🏆', '🎉'][Math.floor(Math.random() * 6)];
+                    particle.style.left = Math.random() * 100 + 'vw';
+                    particle.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                    document.body.appendChild(particle);
+                    setTimeout(() => particle.remove(), 4000);
+                }
+            }
+
+
+            openTeacherModal() {
+                document.getElementById('teacherModal').classList.remove('hidden');
+            }
+
+            closeTeacherModal() {
+                document.getElementById('teacherModal').classList.add('hidden');
+            }
+
+            openTeamsModal() {
+                this.renderTeamRosters();
+                document.getElementById('teamsModal').classList.remove('hidden');
+            }
+
+            closeTeamsModal() {
+                document.getElementById('teamsModal').classList.add('hidden');
+            }
+
+            adjustXP(team, amount) {
+                this.addXP(team, amount);
+            }
+
+            toggleDigitsVisibility() {
+                this.state.digitsVisibleTeacher = !this.state.digitsVisibleTeacher;
+                document.getElementById('toggleDigitsBtn').innerText = this.state.digitsVisibleTeacher ? "Hide" : "Show";
+                this.updateDigitsDisplay();
+            }
+
+            resetXPOnly() {
+                this.state.teamOwl.xp = 0;
+                this.state.teamBox.xp = 0;
+                this.updateXpDisplays();
+                this.saveProgress();
+                this.showToast("XP Reset Successful!");
+            }
+
+            confirmFullReset() {
+                if (confirm("Are you sure you want to reset the entire game progress?")) {
+                    this.resetGameConfirmed();
+                }
+            }
+
+            resetGameConfirmed() {
+                localStorage.removeItem("owl_explorers_data");
+                location.reload();
+            }
+
+            showToast(msg) {
+                const toast = document.createElement('div');
+                toast.className = 'fixed bottom-5 right-5 z-50 bg-slate-900 text-amber-300 px-4 py-2 rounded-xl border border-amber-500/50 shadow-2xl text-xs font-bold animate-bounce';
+                toast.innerText = msg;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 2500);
+            }
+        }
+
+        // Initialize application instance on load
+        let app;
+        window.addEventListener('DOMContentLoaded', () => {
+            app = new OwlExplorersApp();
+        });
+    </script>
+</body>
+</html>
